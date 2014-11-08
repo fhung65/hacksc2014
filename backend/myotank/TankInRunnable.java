@@ -24,11 +24,10 @@ public class TankInRunnable implements Runnable
 				int n = 0;
 				while (n < 4)
 					n += m_in.read(lengthData, n, 4 - n);
-				length = lengthData[0];
-				length |= lengthData[1] << 8;
-				length |= lengthData[2] << 16;
-				length |= lengthData[3] << 24;
-				System.out.println("" + length);
+				length = lengthData[0] & 0xFF;
+				length |= (lengthData[1] & 0xFF) << 8;
+				length |= (lengthData[2] & 0xFF) << 16;
+				length |= (lengthData[3] & 0xFF) << 24;
 				byte[] data = new byte[length];
 				n = 0;
 				while (n < length)
