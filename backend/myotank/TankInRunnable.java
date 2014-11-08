@@ -21,12 +21,11 @@ public class TankInRunnable implements Runnable
 			byte[] data = new byte[16];
 			try {
 				m_in.read(data, 0, data.length);
+				m_dataManager.setImageData(data);
 			}
 			catch (IOException e) {
 				m_dataManager.setTankThreadsKilled(true);
 			}
-			/// TODO: Do something useful with the data
-			System.out.println(data);
 		}
 	}
 }

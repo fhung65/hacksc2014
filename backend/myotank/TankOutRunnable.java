@@ -18,11 +18,8 @@ public class TankOutRunnable implements Runnable
 	{
 		while (!m_dataManager.tankThreadsKilled())
 		{
-			/// TODO: Don't send dummy data
-			byte[] data = new byte[1];
-			data[0] = (byte)(Math.random() * 256);
 			try {
-				m_out.write(data);
+				m_out.write(m_dataManager.getMyoData());
 			}
 			catch (IOException e) {
 				m_dataManager.setTankThreadsKilled(true);
