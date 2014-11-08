@@ -16,11 +16,23 @@ public class TankInRunnable implements Runnable
 	
 	public void run()
 	{
+		byte[] lengthData = new byte[4];
+		int length;
 		while (!m_dataManager.tankThreadsKilled())
 		{
-			byte[] data = new byte[16];
 			try {
-				m_in.read(data, 0, data.length);
+				int n = 0;
+				while (n < 4)
+					n += m_in.read(lengthData, n, 4 - n);
+				length = lengthData[0];
+				length |= lengthData[1] << 8;
+				length |= lengthData[2] << 16;
+				length |= lengthData[3] << 24;
+				System.out.println("" + length);
+				byte[] data = new byte[length];
+				n = 0;
+				while (n < length)
+					n += m_in.read(data, n, length - n);
 				m_dataManager.setImageData(data);
 			}
 			catch (IOException e) {
