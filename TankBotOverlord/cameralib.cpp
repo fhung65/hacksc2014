@@ -431,7 +431,7 @@ void VC0706::buffer_send()
  * Output         : rx_buffer, rx_ready
  * Return         : None
  *******************************************************************************/
-void VC0706::buffer_read()
+void VC0706::buffer_read(uint8_t * buffer)
 {
     bool validity=true;
 
@@ -439,16 +439,16 @@ void VC0706::buffer_read()
         return;
 
     rx_counter=0;
-    rx_buffer[0]=0;
+    buffer[0]=0;
     while (Serial.available() > 0)
     {
-        rx_buffer[rx_counter++]= Serial.read();
+        buffer[rx_counter++]= Serial.read();
         //delay(1);
     }
 
-    if (rx_buffer[0]!=0x76)
+    if (buffer[0]!=0x76)
         validity=false;
-    if (rx_buffer[1]!=SERIAL_NUMBER)
+    if (buffer[1]!=SERIAL_NUMBER)
         validity=false;
 
     if (validity) rx_ready=true;
