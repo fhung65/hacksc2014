@@ -463,7 +463,7 @@ void VC0706::buffer_read()
  * Output		  : None
  * Return		  : None
  *******************************************************************************/
-void VC0706::capture_photo_to_buffer(uint8_t * dataBuf, uint32_t dataBufSize, void(callback*)(uint8_t*, uint32_t))
+void VC0706::capture_photo_to_buffer(void(callback*)(uint8_t*, uint32_t))
 {
     // Set compression ratio
     compression_ratio(63);
@@ -489,11 +489,11 @@ void VC0706::capture_photo_to_buffer(uint8_t * dataBuf, uint32_t dataBufSize, vo
     frame_length<<=16;
     frame_length+=(0x0ff00&(rx_buffer[7]<<8))+rx_buffer[8];
 
-    vc_frame_address =dataBufSize;
+    vc_frame_address =READ_DATA_BLOCK_NO;
 
     while(vc_frame_address<frame_length)
     {
-        read_frame_buffer(vc_frame_address-dataBufSize, dataBufSize);
+        read_frame_buffer(vc_frame_address-READ_DATA_BLOCK_NO, READ_DATA_BLOCK_NO);
         delay(9);
 
         //get the data with length=READ_DATA_BLOCK_NObytes
@@ -501,17 +501,16 @@ void VC0706::capture_photo_to_buffer(uint8_t * dataBuf, uint32_t dataBufSize, vo
         rx_counter=0;
         buffer_read();
 
-        // write data to temp.jpg
-        memcpy(rx_buffer+5, dataBuf, dataBufSize);
-        callback(dataBuf, dataBufSize);
+        // Make the callback with the data
+        callback(rx_buffer+5, READ_DATA_BLOCK_NO);
 
         //read next READ_DATA_BLOCK_NO bytes from frame buffer
-        vc_frame_address+=dataBufSize;
+        vc_frame_address+=READ_DATA_BLOCK_NO;
 
     }
 
     // get the last data
-    vc_frame_address-=dataBufSize;
+    vc_frame_address-=READ_DATA_BLOCK_NO;
 
     last_data_length=frame_length-vc_frame_address;
 
@@ -522,8 +521,8 @@ void VC0706::capture_photo_to_buffer(uint8_t * dataBuf, uint32_t dataBufSize, vo
     rx_counter=0;
     buffer_read();
 
-    memcpy(rx_buffer+5, dataBuf, last_data_length);
-    callback(dataBuf, last_data_length);
+    // Make tha callback with the data
+    callback(rx_buffer+5, last_data_length);
 }
 
 
