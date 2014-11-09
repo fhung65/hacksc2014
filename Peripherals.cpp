@@ -15,11 +15,21 @@
 std::string tank_forward(int speed)
 {
 	std::stringstream ss;
-	ss << "tf:" << speed - 9 << std::endl;
+	ss << "tf:" << speed << std::endl;
 	std::string out;
 	ss >> out;
 	return out;
 }
+
+std::string tank_backward(int speed)
+{
+	std::stringstream ss;
+	ss << "tb:" << speed << std::endl;
+	std::string out;
+	ss >> out;
+	return out;
+}
+
 
 std::string tank_right(int speed)
 {
@@ -52,6 +62,15 @@ std::string cam_rot(float speed)// will be +/- and magnitude matters
 {
 	std::stringstream ss;
 	ss << "cr:" << speed << std::endl;
+	std::string out;
+	ss >> out;
+	return out;
+}
+
+std::string cam_pitch(float speed)
+{
+	std::stringstream ss;
+	ss << "cp:" << speed << std::endl;
 	std::string out;
 	ss >> out;
 	return out;
@@ -92,9 +111,9 @@ std::string cam_screenshot()
 		float pitch = asin(max(-1.0f, min(1.0f, 2.0f * (quat.w() * quat.y() - quat.z() * quat.x()))));
 		float yaw = atan2(2.0f * (quat.w() * quat.z() + quat.x() * quat.y()),
 			1.0f - 2.0f * (quat.y() * quat.y() + quat.z() * quat.z()));
-		// Convert the floating point angles in radians to a scale from 0 to 18.
-		pitch_w = static_cast<int>((pitch + (float)M_PI / 2.0f) / M_PI * 18);
-		yaw_w = static_cast<int>((yaw + (float)M_PI) / (M_PI * 2.0f) * 18);
+		// Convert the floating point angles in radians to a scale from 0 to 127.
+		pitch_w = static_cast<int>((pitch + (float)M_PI / 2.0f) / M_PI * 127);
+		yaw_w = static_cast<int>((yaw + (float)M_PI) / (M_PI * 2.0f) * 127);
 	}
 	// onPose() is called whenever the Myo detects that the person wearing it has changed their pose, for example,
 	// making a fist, or not making a fist anymore.
@@ -197,7 +216,10 @@ std::string peripherals::loop(){
 	{
 		out = tank_forward(list.pitch_w); // currently, has values 0 - 18
 	}
-
+	else if (myoPose == myo::Pose::fingersSpread)
+	{
+		out = tank_backward(list.pitch_w);
+	}
 	else if ((myoPose == myo::Pose::waveIn && myoArm == myo::Arm::armLeft) ||
 		(myoPose == myo::Pose::waveOut && myoArm == myo::Arm::armRight))
 	{
@@ -208,16 +230,12 @@ std::string peripherals::loop(){
 	{
 		out = tank_left(list.yaw_w);
 	}
-	else if (myoPose == myo::Pose::thumbToPinky)
-	{
-		//quit = true;
-	}
-	else if (myoPose == myo::Pose::fingersSpread && last_shot > 50)
-	{
+	else if (myoPose == myo::Pose::thumbToPinky && last_shot > 50)
+	{	
 		out = cam_screenshot();
 		last_shot = 0;
 	}
-	if (last_shot < 200)
+	if (last_shot < 2000)
 		last_shot++;
 
 	ovrTrackingState trackState = ovrHmd_GetTrackingState(hmd,
@@ -226,6 +244,6 @@ std::string peripherals::loop(){
 	float yaw, pitch, roll;
 	ovrPose.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z>(&yaw, &pitch, &roll);
 
-	out += ";" + cam_rot(yaw);
+	out += ";" + cam_rot(yaw) + ";" + cam_pitch(pitch);
 	return out;
 }
