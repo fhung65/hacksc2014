@@ -1,16 +1,46 @@
 package myotank;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+
 public class DataManager
 {
 	private boolean m_tankThreadsKilled = false;
 	private boolean m_clientThreadsKilled = false;
 	private byte[] m_imageData = null;
 	private boolean m_hasNewImageData = false;
-	private byte m_myoData = 0;
+	private LinkedList<byte[]> m_myoData = new LinkedList<byte[]>();
+	private int screenshotIndex;
 	private Object tankThreadLock = new Object();
 	private Object clientThreadLock = new Object();
 	private Object imageDataLock = new Object();
 	private Object myoDataLock = new Object();
+	
+	public DataManager()
+	{
+		// Find appropriate number to begin screenshotting with
+		StringBuffer stringBuffer = new StringBuffer("0000");
+		for (screenshotIndex = 1; screenshotIndex < 10000; screenshotIndex++)
+		{
+			for (int i = 3; i >= 0; i--)
+			{
+				char c = stringBuffer.charAt(i);
+				if (c != '9')
+				{
+					stringBuffer.setCharAt(i, (char)(c + 1));
+					break;
+				}
+				else
+					stringBuffer.setCharAt(i, '0');
+			}
+			File file = new File("C:\\RobotBackend\\Screenshots\\Screenshot" + stringBuffer.toString() + ".jpg");
+			if (!file.isFile())
+				break;
+		}
+		// Not worth our time to deal with the case where the user has over 10000 photos
+	}
 	
 	public void setTankThreadsKilled(boolean value)
 	{
@@ -63,17 +93,80 @@ public class DataManager
 		}
 	}
 	
-	public void setMyoData(byte data)
+	public void parseAndSetMyoData(byte[] input)
 	{
-		synchronized (myoDataLock) {
-			m_myoData = data;
+		// Multiple inputs may be placed in the same line separated by semi-colons
+		String[] commands = (new String(input)).trim().split(";");
+		// Commands take form of type:magnitude
+		ArrayList<String[]> validCommands = new ArrayList<String[]>();
+		for (int i = 0; i < commands.length; i++)
+			if (!commands[i].equals(""))
+				validCommands.add(commands[i].split(":"));
+		
+		for (int i = 0; i < validCommands.size(); i++)
+		{
+			if (validCommands.get(i).length == 1) // Only screenshot command has no magnitude
+			{
+				// Save screenshot to server
+				byte[] imageData = getImageData();
+				if (imageData != null)
+				{
+					StringBuffer stringBuffer = new StringBuffer("0000");
+					int multiplier = 1000;
+					for (int i = 0; i < 4; i++)
+					{
+						stringBuffer.setCharAt(i, (char)((screenshotIndex / multiplier) % 10));
+						multiplier /= 10;
+					}
+					FileOutputStream screenshot = null;
+					try {
+						screenshot = new FileOutputStream("C:\\RobotBackend\\Screenshots\\Screenshot" + stringBuffer.toString() + ".jpg");
+					}
+					catch (FileNotFoundException e)
+					{ }
+					screenshotIndex++;
+					try {
+						screenshot.write(imageData);
+						screenshot.close();
+					}
+					catch (IOException e)
+					{ }
+				}	
+			}
+			else
+			{
+				double magnitude;
+				try {
+					magnitude = Double.parseDouble(validCommands.get(i)[1]);
+				}
+				catch (NumberFormatException e) {
+					magnitude = 0.0;
+				}
+				synchronized (myoDataLock) {
+					m_myoData.add(input);
+				}
+			}
 		}
 	}
 	
-	public byte getMyoData()
+	public byte[] getMyoData()
 	{
 		synchronized (myoDataLock) {
-			return m_myoData;
+			/// TODO: Make this comply with communication standards
+			return m_myoData.getFirst();
 		}
+	}
+	
+	private char parseCommand(String command)
+	{
+		if (command.equals("tr"))
+			return 'r';
+		if (command.equals("tl"))
+			return 'l';
+		if (command.equals("tf"))
+			return 'f';
+		if (command.equals("cr"))
+			return 'a';
+		return 'f';
 	}
 }

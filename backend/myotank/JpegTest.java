@@ -9,7 +9,7 @@ import java.net.InetAddress;
 
 public class JpegTest
 {
-	private static final int MAX_CHUNK_SIZE = 16384;
+	private static final int MAX_CHUNK_SIZE = 4096;
 
 	public static void main(String[] args)
 	{
@@ -39,11 +39,35 @@ public class JpegTest
 				n += nBytesRead;
 			}*/
 			in.read(imageData);
-
 			out.write(lengthData);
 			out.flush();
 			out.write(imageData);
 			out.flush();
+			
+			in = new RandomAccessFile("myotank\\wow.jpg", "r");
+			length = (int)in.length();
+			lengthData = new byte[4];
+			lengthData[0] = (byte)((length << 1) & 0xFE);
+			lengthData[1] = (byte)((length >> 6) & 0xFE);
+			lengthData[2] = (byte)((length >> 13) & 0xFE);
+			lengthData[3] = (byte)((length >> 20) & 0xFE);
+			System.out.println(lengthData[0] + " " + lengthData[1] + " " + lengthData[2] + " " + lengthData[3]);
+			System.out.println(length + "");
+			imageData = new byte[length];
+			
+			in.read(imageData);
+			out.write(lengthData);
+			out.flush();
+			out.write(imageData);
+			out.flush();
+			
+			/*int n = 0;
+			while (n < imageData.length)
+			{
+				out.write(imageData, n, Math.min(imageData.length - n, MAX_CHUNK_SIZE));
+				n += MAX_CHUNK_SIZE;
+				out.flush();
+			}*/
 			
 			/*Socket server2 = new Socket(InetAddress.getByAddress(address), 2420);
 			InputStream in2 = server2.getInputStream();

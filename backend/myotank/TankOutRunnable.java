@@ -19,14 +19,18 @@ public class TankOutRunnable implements Runnable
 		while (!m_dataManager.tankThreadsKilled())
 		{
 			try {
-				m_out.write(m_dataManager.getMyoData());
-				m_out.flush();
+				byte[] myoData = m_dataManager.getMyoData();
+				if (myoData != null)
+				{
+					m_out.write(myoData);
+					m_out.flush();
+				}
 			}
 			catch (IOException e) {
 				m_dataManager.setTankThreadsKilled(true);
 			}
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(200);
 			}
 			catch (InterruptedException e)
 			{ }

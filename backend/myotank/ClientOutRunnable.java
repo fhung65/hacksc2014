@@ -7,11 +7,13 @@ public class ClientOutRunnable implements Runnable
 {
 	private DataManager m_dataManager;
 	private OutputStream m_out;
+	private boolean m_sendZeroes;
 
 	public ClientOutRunnable(DataManager dataManager, OutputStream out)
 	{
 		m_dataManager = dataManager;
 		m_out = out;
+		m_sendZeroes = true;
 	}
 	
 	public void run()
@@ -35,13 +37,17 @@ public class ClientOutRunnable implements Runnable
 				catch (IOException e) {
 					m_dataManager.setClientThreadsKilled(true);
 				}
+				m_sendZeroes = false;
 			}
-			else
+			else// if (m_sendZeroes)
 			{
 				try {
-					Thread.sleep(100);
+					byte[] zero = {0, 0, 0, 0};
+					m_out.write(zero);
+					m_out.flush();
+					Thread.sleep(50);
 				}
-				catch (InterruptedException e)
+				catch (Exception e)
 				{ }
 			}
 		}

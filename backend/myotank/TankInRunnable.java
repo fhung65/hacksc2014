@@ -25,27 +25,28 @@ public class TankInRunnable implements Runnable
 				while (n < 4)
 				{
 					int bytesRead = m_in.read(lengthData, n, 4 - n);
-					if (bytesRead == -1)
-						throw new IOException();
-					n += bytesRead;
+					if (bytesRead != -1)
+						//throw new IOException();
+						n += bytesRead;
 				}
 				length = (lengthData[0] & 0xFE) >> 1;
 				length |= (lengthData[1] & 0xFE) << 6;
 				length |= (lengthData[2] & 0xFE) << 13;
 				length |= (lengthData[3] & 0xFE) << 20;
-				System.out.println(length + "");
 				byte[] data = new byte[length];
 				n = 0;
 				while (n < length)
 				{
 					int bytesRead = m_in.read(data, n, length - n);
-					if (bytesRead == -1)
-						throw new IOException();
-					n += bytesRead;
+					if (bytesRead != -1)
+						//throw new IOException();
+						n += bytesRead;
+					System.out.println(n + "");
 				}
 				m_dataManager.setImageData(data);
 			}
 			catch (IOException e) {
+				System.out.println("IOException caught");
 				m_dataManager.setTankThreadsKilled(true);
 			}
 		}
