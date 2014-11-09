@@ -3,28 +3,50 @@
 #include<cmath>
 #include<algorithm>
 #include<myo/myo.hpp>
-#include<OVR.h>
+#include<OVR_CAPI.h>
+#include<OVR_Math.h>
+#include<math.h>
 
-void move_forward(int speed)
+///////////////////////////////////////
+//Tank functions
+///////////////////////////////////////
+void tank_forward(int speed)
 {
-	std::cout << "f." << speed << std::endl;
+	std::cout << "tf:" << speed - 9 << std::endl;
 }
 
-void turn_right(int speed)
+void tank_right(int speed)
 {
-	std::cout << "r." << speed << std::endl;
+	std::cout << "tr:" << speed << std::endl;
 }
 
-void turn_left(int speed)
+void tank_left(int speed)
 {
-	std::cout << "l." << speed << std::endl;
+	std::cout << "tl:" << speed << std::endl;
 }
 
-void move_back(int speed)
+//void tank_back(int speed)
+//{
+//	std::cout << "tb:" << speed << std::endl;
+//}
+
+///////////////////////////////////////
+//Camera Functions
+///////////////////////////////////////
+
+void cam_rot(float speed)// will be +/- and magnitude matters
 {
-	std::cout << "b." << speed << std::endl;
+	std::cout << "cr:" << speed << std::endl;
 }
 
+void cam_screenshot()
+{
+	std::cout << "sc" << std::endl;
+}
+
+///////////////////////////////////////
+//Myo
+///////////////////////////////////////
 class tank_listener : public myo::DeviceListener
 {
 public:
@@ -92,10 +114,50 @@ public:
 
 };
 
+////////////////////////////////////////////////
+//Oculus
+////////////////////////////////////////////////
 
+void init_OVR()
+{
+	ovr_Initialize();
+}
+
+void quit_OVR()
+{
+	ovr_Shutdown();
+}
+
+///////////////////////////////////////////////////
+//Main
+///////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
 	std::cout << "starting\n";
+
+	//Initialize head mount device
+	std::cout << "Initializing OVR\n";
+	ovr_Initialize();
+
+	ovrHmd hmd = ovrHmd_Create(0);
+	if(!hmd)
+	{
+		std::cout << "failed to create head mount device!\n";
+		exit(1);
+	}
+	
+	//configure ovrHmd for tracking -> we have three suppotrted tracking capabilities, one req'd
+	bool ovrHmd_config_tracking_success = 
+		ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation|
+									ovrTrackingCap_Position |
+									ovrTrackingCap_MagYawCorrection, 0);
+	if (!ovrHmd_config_tracking_success)
+	{
+		std::cout << "failed to configure required capabilities (MagYawCorrection)\n";
+		exit(1);
+	}
+	
+	//initialize myo hub 
 	myo::Hub hub;
 
 	std::cout << "Trying to find a Myo...\n";
@@ -108,41 +170,61 @@ int main(int argc, char* argv[])
 	}
 	std::cout << "Connected to Myo\n";
 	
+	//create default listener (data collector)
 	tank_listener list;
-
+	//add it to the hub
 	hub.addListener(&list);
 
+	int last_shot = 0;
 	bool quit = false;
 	while (!quit)
 	{
+		//update the hub, 1 sec/ 20 times 
 		hub.run(1000 / 20);
+		//get data from myolistener
+		myo::Pose myoPose = list.currentPose;
+		myo::Arm myoArm = list.whichArm;
 
-		myo::Pose pose = list.currentPose;
-		myo::Arm arm = list.whichArm;
 
-		if (pose == myo::Pose::fist)
+		//do stuff with myo data
+		if (myoPose == myo::Pose::fist)
 		{
-			move_forward(list.pitch_w); // currently, has values 0 - 18
+			tank_forward(list.pitch_w); // currently, has values 0 - 18
 		}
-		else if (pose == myo::Pose::fingersSpread)
+
+		else if ((myoPose == myo::Pose::waveIn && myoArm == myo::Arm::armLeft)||
+				(myoPose == myo::Pose::waveOut && myoArm == myo::Arm::armRight))
 		{
-			move_back(list.pitch_w);
+			tank_right(18-list.yaw_w);
 		}
-		else if ((pose == myo::Pose::waveIn && arm == myo::Arm::armLeft)||
-				(pose == myo::Pose::waveOut && arm == myo::Arm::armRight))
+		else if ((myoPose == myo::Pose::waveIn && myoArm == myo::Arm::armRight) ||
+			(myoPose == myo::Pose::waveOut && myoArm == myo::Arm::armLeft))
 		{
-			turn_right(18-list.yaw_w);
+			tank_left(list.yaw_w);
 		}
-		else if ((pose == myo::Pose::waveIn && arm == myo::Arm::armRight) ||
-			(pose == myo::Pose::waveOut && arm == myo::Arm::armLeft))
-		{
-			turn_left(list.yaw_w);
-		}
-		else if (pose == myo::Pose::thumbToPinky)
+		else if (myoPose == myo::Pose::thumbToPinky)
 		{
 			quit = true;
 		}
+		else if (myoPose == myo::Pose::fingersSpread && last_shot > 50)
+		{
+			cam_screenshot();
+			last_shot = 0;
+		}
+		if (last_shot < 200)
+			last_shot++;
+
+		ovrTrackingState trackState = ovrHmd_GetTrackingState(hmd,
+			ovr_GetTimeInSeconds());
+		OVR::Quatf ovrPose = trackState.HeadPose.ThePose.Orientation;
+		float yaw, pitch, roll;
+		ovrPose.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z>(&yaw, &pitch, &roll);
+
+		cam_rot(yaw);
 	}
+
+	ovrHmd_Destroy(hmd);
+	ovr_Shutdown();
 
 	return 0;
 }
