@@ -20,7 +20,9 @@ public class ClientInRunnable implements Runnable
 		{
 			byte[] data = new byte[1];
 			try {
-				m_in.read(data);
+				int bytesRead = m_in.read(data);
+				if (bytesRead == -1)
+					throw new IOException();
 				m_dataManager.setMyoData(data[0]);
 			}
 			catch (IOException e) {

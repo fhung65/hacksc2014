@@ -2,6 +2,7 @@ package myotank;
 
 import java.io.IOException;
 import java.io.BufferedOutputStream;
+import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -30,9 +31,11 @@ public class ClientRunnable implements Runnable
 				continue;
 			}
 			
+			//OutputStream out = null;
 			BufferedOutputStream out = null;
 			try {
 				out = new BufferedOutputStream(client.getOutputStream());
+				//out = client.getOutputStream();
 			}
 			catch (IOException e) {
 				continue;
@@ -62,7 +65,13 @@ public class ClientRunnable implements Runnable
 			}
 			catch (InterruptedException e)
 			{ }
-				
+			
+			try {
+				out.close();
+				in.close();
+			}
+			catch (IOException e)
+			{ }
 			m_dataManager.setClientThreadsKilled(false);
 		}
 	}

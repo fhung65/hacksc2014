@@ -4,6 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.io.BufferedInputStream;
 
 public class TankRunnable implements Runnable
@@ -39,7 +40,9 @@ public class TankRunnable implements Runnable
 				continue;
 			}
 			BufferedInputStream in = null;
+			//InputStream in = null;
 			try {
+				//in = client.getInputStream();
 				in = new BufferedInputStream(client.getInputStream());
 			}
 			catch (IOException e) {
@@ -63,7 +66,13 @@ public class TankRunnable implements Runnable
 			}
 			catch (InterruptedException e)
 			{ }
-				
+			
+			try {
+				out.close();
+				in.close();
+			}
+			catch (IOException e)
+			{ }
 			m_dataManager.setTankThreadsKilled(false);
 		}
 	}

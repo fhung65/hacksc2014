@@ -23,15 +23,26 @@ public class TankInRunnable implements Runnable
 			try {
 				int n = 0;
 				while (n < 4)
-					n += m_in.read(lengthData, n, 4 - n);
-				length = lengthData[0] & 0xFF;
-				length |= (lengthData[1] & 0xFF) << 8;
-				length |= (lengthData[2] & 0xFF) << 16;
-				length |= (lengthData[3] & 0xFF) << 24;
+				{
+					int bytesRead = m_in.read(lengthData, n, 4 - n);
+					if (bytesRead == -1)
+						throw new IOException();
+					n += bytesRead;
+				}
+				length = (lengthData[0] & 0xFE) >> 1;
+				length |= (lengthData[1] & 0xFE) << 6;
+				length |= (lengthData[2] & 0xFE) << 13;
+				length |= (lengthData[3] & 0xFE) << 20;
+				System.out.println(length + "");
 				byte[] data = new byte[length];
 				n = 0;
 				while (n < length)
-					n += m_in.read(data, n, length - n);
+				{
+					int bytesRead = m_in.read(data, n, length - n);
+					if (bytesRead == -1)
+						throw new IOException();
+					n += bytesRead;
+				}
 				m_dataManager.setImageData(data);
 			}
 			catch (IOException e) {

@@ -22,12 +22,13 @@ public class ClientOutRunnable implements Runnable
 			{
 				byte[] lengthData = new byte[4];
 				byte[] imageData = m_dataManager.getImageData();
-				lengthData[0] = (byte)(imageData.length & 0xFF);
-				lengthData[1] = (byte)((imageData.length >> 8) & 0xFF);
-				lengthData[2] = (byte)((imageData.length >> 16) & 0xFF);
-				lengthData[3] = (byte)((imageData.length >> 24) & 0xFF);
+				lengthData[0] = (byte)((imageData.length << 1) & 0xFE);
+				lengthData[1] = (byte)((imageData.length >> 6) & 0xFE);
+				lengthData[2] = (byte)((imageData.length >> 13) & 0xFE);
+				lengthData[3] = (byte)((imageData.length >> 20) & 0xFE);
 				try {
 					m_out.write(lengthData);
+					m_out.flush();
 					m_out.write(imageData);
 					m_out.flush();
 				}

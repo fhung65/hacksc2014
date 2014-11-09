@@ -20,6 +20,7 @@ public class TankOutRunnable implements Runnable
 		{
 			try {
 				m_out.write(m_dataManager.getMyoData());
+				m_out.flush();
 			}
 			catch (IOException e) {
 				m_dataManager.setTankThreadsKilled(true);
